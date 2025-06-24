@@ -8,13 +8,13 @@ from telegram.ext import (
 )
 from telegram.constants import ParseMode
 import os
+import nest_asyncio
 import asyncio
 
-# === CONFIG ===
 TOKEN = "7783620639:AAEanbapO1Ci2dnBvwxhfSiP2eBC0TQPKio"
-WEBHOOK_URL = "https://statiellaebot.onrender.com/webhook"
+WEBHOOK_URL = "https://statiellaebot.onrender.com/webhook"  # URL completo incluso /webhook
 
-# === MESSAGGI ===
+# Messaggio di benvenuto
 WELCOME_MESSAGE = """
 👋 Benvenuto nell’*assistente automatico di Statiellae Immobiliare!*
 
@@ -22,9 +22,10 @@ Questo assistente è attivo 24/7 per fornirti informazioni utili.
 
 Per richieste urgenti puoi contattare direttamente *Giada* su WhatsApp al **320 807 0022**.
 
-👇 Usa il menu qui sotto per iniziare.
+🔻 Usa il menu qui sotto per iniziare.
 """
 
+# Tastiera principale
 main_menu = ReplyKeyboardMarkup([
     ["📍 Vetrina", "📄 Documenti"],
     ["🛠 Servizi", "📞 Contatti"],
@@ -32,6 +33,7 @@ main_menu = ReplyKeyboardMarkup([
     ["🦘 Contatta Giada", "🔄 Riavvia"]
 ], resize_keyboard=True)
 
+# Risposte generali
 RISPOSTE = {
     "📍 Vetrina": "🔎 Consulta la vetrina aggiornata:\nhttps://www.immobiliarestatiellae.it/immobili",
     "📄 Documenti": (
@@ -64,13 +66,13 @@ RISPOSTE = {
 
 menu_state = {}
 
-# === HANDLER: /start ===
+# /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     menu_state[user_id] = "main"
     await update.message.reply_text(WELCOME_MESSAGE, parse_mode=ParseMode.MARKDOWN, reply_markup=main_menu)
 
-# === HANDLER: messaggi utente ===
+# Messaggi normali
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text
@@ -85,7 +87,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=main_menu
         )
 
-# === HANDLER: nuovi membri ===
+# Nuovi membri nel gruppo
 async def new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for member in update.message.new_chat_members:
         if not member.is_bot:
@@ -95,7 +97,7 @@ async def new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=main_menu
             )
 
-# === FUNZIONE PRINCIPALE ===
+# Avvio con webhook
 async def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
@@ -108,11 +110,11 @@ async def main():
     await app.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
-        webhook_url="/webhook"
+        webhook_url=WEBHOOK_URL
     )
 
-# === AVVIO EVENT LOOP (compatibile con Render) ===
+# Esegui correttamente l'app in Render
+nest_asyncio.apply()
+
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.create_task(main())
-    loop.run_forever()
+    asyncio.run(main())

@@ -8,9 +8,10 @@ from telegram.ext import (
 )
 from telegram.constants import ParseMode
 import os
+import asyncio
 
 TOKEN = "7783620639:AAEanbapO1Ci2dnBvwxhfSiP2eBC0TQPKio"
-WEBHOOK_URL = "https://statiellaebot.onrender.com"  # 🔁 SOSTITUISCI con il tuo URL completo Render
+WEBHOOK_URL = "https://statiellaebot.onrender.com/webhook"  # ✅ path completo
 
 # Messaggio di benvenuto
 WELCOME_MESSAGE = """
@@ -85,7 +86,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=main_menu
         )
 
-# Nuovi membri nel gruppo
+# Nuovi membri
 async def new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for member in update.message.new_chat_members:
         if not member.is_bot:
@@ -95,7 +96,7 @@ async def new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=main_menu
             )
 
-# Avvio con webhook
+# Funzione principale per avvio webhook
 async def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
@@ -104,18 +105,13 @@ async def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 
     await app.bot.set_webhook(WEBHOOK_URL)
-await app.run_webhook(
-    listen="0.0.0.0",
-    port=int(https://statiellaebot.onrender.com("PORT", 10000)),
-    webhook_url="/webhook"
-)
 
+    await app.run_webhook(
+        listen="0.0.0.0",
+        port=int(os.environ.get("PORT", 10000)),
+        webhook_url="/webhook"
     )
 
-import asyncio
-
+# Avvio evento asincrono
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.create_task(main())
-    loop.run_forever()
-
+    asyncio.run(main())

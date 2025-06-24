@@ -1,7 +1,7 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
-TOKEN = "7783620639:AAEanbapO1Ci2dnBvwxhfSiP2eBC0TQPKio"
+TOKEN = "INSERISCI_IL_TUO_TOKEN_SICURO"
 
 # Messaggio di benvenuto
 WELCOME_MESSAGE = """
@@ -85,16 +85,22 @@ FAQ = {
     )
 }
 
+# Stato menu per ciascun utente
 menu_state = {}
 
+# Comando /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     menu_state[user_id] = "main"
     await context.bot.send_message(chat_id=update.effective_chat.id, text=WELCOME_MESSAGE, parse_mode="Markdown", reply_markup=main_menu)
 
+# Gestione messaggi
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.text:
+        return
+
     user_id = update.effective_user.id
-    text = update.message.text
+    text = update.message.text.strip()
     user = update.effective_user
     chat = update.effective_chat
 
@@ -106,14 +112,13 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         menu_state[user_id] = "main"
         await context.bot.send_message(chat_id=chat.id, text="🔙 Torna al menu principale.", reply_markup=main_menu)
 
-    elif text in FAQ:
+    elif menu_state.get(user_id) == "faq" and text in FAQ:
         await context.bot.send_message(chat_id=chat.id, text=FAQ[text], parse_mode="Markdown", reply_markup=faq_menu)
 
-    elif text in RISPOSTE:
+    elif menu_state.get(user_id) == "main" and text in RISPOSTE:
         await context.bot.send_message(chat_id=chat.id, text=RISPOSTE[text], parse_mode="Markdown", reply_markup=main_menu)
 
     else:
-        domanda = text
         await context.bot.send_message(
             chat_id=chat.id,
             text="❓ Non ho capito la richiesta. Verrai contattato via WhatsApp da *Giada* nel più breve tempo possibile.",
@@ -121,14 +126,16 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=main_menu
         )
 
-        # Inoltra la domanda nel gruppo/supergruppo
+        # Riscrittura della domanda nello stesso gruppo o supergruppo
         if chat.type in ["group", "supergroup"]:
+            nome = user.full_name or user.username or "Utente"
             await context.bot.send_message(
                 chat_id=chat.id,
-                text=f"📩 *Domanda non riconosciuta da {user.full_name}:*\n_{domanda}_",
+                text=f"📩 *Domanda non riconosciuta da {nome}:*\n_{text}_",
                 parse_mode="Markdown"
             )
 
+# Avvio dell'app
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))

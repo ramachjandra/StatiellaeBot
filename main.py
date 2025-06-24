@@ -7,7 +7,7 @@ from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 )
 
-TOKEN = "7783620639:AAEanbapO1Ci2dnBvwxhfSiP2eBC0TQPKio"
+TOKEN = os.environ.get("BOT_TOKEN", "7783620639:AAEanbapO1Ci2dnBvwxhfSiP2eBC0TQPKio")
 WEBHOOK_URL = "https://statiellaebot.onrender.com/webhook"
 
 WELCOME_MESSAGE = """
@@ -57,51 +57,26 @@ RISPOSTE = {
     "🔄 Riavvia": WELCOME_MESSAGE
 }
 
-menu_state = {}
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    menu_state[user_id] = "main"
     await update.message.reply_text(WELCOME_MESSAGE, parse_mode=ParseMode.MARKDOWN, reply_markup=main_menu)
 
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
     text = update.message.text
-
-    if text in RISPOSTE:
-        await update.message.reply_text(RISPOSTE[text], parse_mode=ParseMode.MARKDOWN, reply_markup=main_menu)
-    else:
-        await update.message.reply_text(
-            "🚫 Mi dispiace, non ho capito la richiesta. Questo assistente automatico è pensato per rispondere solo alle domande più comuni.\n"
-            "Per domande specifiche, verrai ricontattato privatamente via WhatsApp da *Giada*.",
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=main_menu
-        )
-
-async def new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    for member in update.message.new_chat_members:
-        if not member.is_bot:
-            await update.message.reply_text(
-                f"👋 Benvenuto {member.full_name} nel gruppo di Statiellae Immobiliare!\n\n"
-                "Questo è l’assistente automatico, attivo 24h su 24, per rispondere alle domande più comuni.",
-                reply_markup=main_menu
-            )
+    response = RISPOSTE.get(text, "🚫 Comando non riconosciuto. Usa il menu.")
+    await update.message.reply_text(response, parse_mode=ParseMode.MARKDOWN, reply_markup=main_menu)
 
 async def main():
     app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, new_member))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 
-    await app.bot.set_webhook(url=WEBHOOK_URL)
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 
     await app.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
-        webhook_path="/webhook",
+        webhook_url=WEBHOOK_URL
     )
 
-# Per ambienti che hanno già un event loop (come Render)
 if __name__ == "__main__":
     nest_asyncio.apply()
     asyncio.get_event_loop().run_until_complete(main())

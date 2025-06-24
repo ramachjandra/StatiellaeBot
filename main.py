@@ -1,14 +1,10 @@
 import os
-import asyncio
 import nest_asyncio
+import asyncio
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.constants import ParseMode
 from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    MessageHandler,
-    ContextTypes,
-    filters,
+    ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 )
 
 TOKEN = "7783620639:AAEanbapO1Ci2dnBvwxhfSiP2eBC0TQPKio"
@@ -61,17 +57,23 @@ RISPOSTE = {
     "🔄 Riavvia": WELCOME_MESSAGE
 }
 
+menu_state = {}
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    menu_state[user_id] = "main"
     await update.message.reply_text(WELCOME_MESSAGE, parse_mode=ParseMode.MARKDOWN, reply_markup=main_menu)
 
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
     text = update.message.text
+
     if text in RISPOSTE:
         await update.message.reply_text(RISPOSTE[text], parse_mode=ParseMode.MARKDOWN, reply_markup=main_menu)
     else:
         await update.message.reply_text(
             "🚫 Mi dispiace, non ho capito la richiesta. Questo assistente automatico è pensato per rispondere solo alle domande più comuni.\n"
-            "Per domande specifiche, verrai ricontattato da *Giada* via WhatsApp.",
+            "Per domande specifiche, verrai ricontattato privatamente via WhatsApp da *Giada*.",
             parse_mode=ParseMode.MARKDOWN,
             reply_markup=main_menu
         )
@@ -86,9 +88,7 @@ async def new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
 async def main():
-    nest_asyncio.apply()
     app = ApplicationBuilder().token(TOKEN).build()
-
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, new_member))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
@@ -98,8 +98,10 @@ async def main():
     await app.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
-        webhook_path="/webhook"
+        webhook_path="/webhook",
     )
 
+# Per ambienti che hanno già un event loop (come Render)
 if __name__ == "__main__":
-    asyncio.run(main())
+    nest_asyncio.apply()
+    asyncio.get_event_loop().run_until_complete(main())

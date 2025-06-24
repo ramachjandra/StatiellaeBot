@@ -113,11 +113,28 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(RISPOSTE[text], parse_mode="Markdown", reply_markup=main_menu)
 
     else:
-        await update.message.reply_text(
-            "❓ Non ho capito la richiesta. Verrai contattato via WhatsApp da *Giada* nel più breve tempo possibile. ",
-            parse_mode="Markdown",
-            reply_markup=main_menu
+        else:
+    user = update.effective_user
+    chat = update.effective_chat
+    domanda = update.message.text
+
+    # Risposta all'utente
+    await update.message.reply_text(
+        "❓ Non ho capito la richiesta. Verrai contattato via WhatsApp da *Giada* nel più breve tempo possibile.",
+        parse_mode="Markdown",
+        reply_markup=main_menu
+    )
+
+    # Rimanda la domanda nel gruppo
+    try:
+        await context.bot.send_message(
+            chat_id=chat.id,
+            text=f"📩 *Domanda non riconosciuta da {user.full_name}:*\n_{domanda}_",
+            parse_mode="Markdown"
         )
+    except Exception as e:
+        print(f"Errore nell'invio della domanda nel gruppo: {e}")
+
 
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))

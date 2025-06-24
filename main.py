@@ -1,4 +1,8 @@
+import os
+import asyncio
+import nest_asyncio
 from telegram import Update, ReplyKeyboardMarkup
+from telegram.constants import ParseMode
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -6,15 +10,10 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-from telegram.constants import ParseMode
-import os
-import nest_asyncio
-import asyncio
 
 TOKEN = "7783620639:AAEanbapO1Ci2dnBvwxhfSiP2eBC0TQPKio"
-WEBHOOK_URL = "https://statiellaebot.onrender.com/webhook"  # URL completo incluso /webhook
+WEBHOOK_URL = "https://statiellaebot.onrender.com/webhook"
 
-# Messaggio di benvenuto
 WELCOME_MESSAGE = """
 👋 Benvenuto nell’*assistente automatico di Statiellae Immobiliare!*
 
@@ -22,10 +21,9 @@ Questo assistente è attivo 24/7 per fornirti informazioni utili.
 
 Per richieste urgenti puoi contattare direttamente *Giada* su WhatsApp al **320 807 0022**.
 
-🔻 Usa il menu qui sotto per iniziare.
+👇 Usa il menu qui sotto per iniziare.
 """
 
-# Tastiera principale
 main_menu = ReplyKeyboardMarkup([
     ["📍 Vetrina", "📄 Documenti"],
     ["🛠 Servizi", "📞 Contatti"],
@@ -33,7 +31,6 @@ main_menu = ReplyKeyboardMarkup([
     ["🦘 Contatta Giada", "🔄 Riavvia"]
 ], resize_keyboard=True)
 
-# Risposte generali
 RISPOSTE = {
     "📍 Vetrina": "🔎 Consulta la vetrina aggiornata:\nhttps://www.immobiliarestatiellae.it/immobili",
     "📄 Documenti": (
@@ -64,30 +61,21 @@ RISPOSTE = {
     "🔄 Riavvia": WELCOME_MESSAGE
 }
 
-menu_state = {}
-
-# /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    menu_state[user_id] = "main"
     await update.message.reply_text(WELCOME_MESSAGE, parse_mode=ParseMode.MARKDOWN, reply_markup=main_menu)
 
-# Messaggi normali
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
     text = update.message.text
-
     if text in RISPOSTE:
         await update.message.reply_text(RISPOSTE[text], parse_mode=ParseMode.MARKDOWN, reply_markup=main_menu)
     else:
         await update.message.reply_text(
             "🚫 Mi dispiace, non ho capito la richiesta. Questo assistente automatico è pensato per rispondere solo alle domande più comuni.\n"
-            "Per domande specifiche, verrai ricontattato privatamente via WhatsApp da *Giada*.",
+            "Per domande specifiche, verrai ricontattato da *Giada* via WhatsApp.",
             parse_mode=ParseMode.MARKDOWN,
             reply_markup=main_menu
         )
 
-# Nuovi membri nel gruppo
 async def new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for member in update.message.new_chat_members:
         if not member.is_bot:
@@ -97,24 +85,21 @@ async def new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=main_menu
             )
 
-# Avvio con webhook
 async def main():
+    nest_asyncio.apply()
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, new_member))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 
-    await app.bot.set_webhook(WEBHOOK_URL)
+    await app.bot.set_webhook(url=WEBHOOK_URL)
 
     await app.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
-        webhook_url=WEBHOOK_URL
+        webhook_path="/webhook"
     )
-
-# Esegui correttamente l'app in Render
-nest_asyncio.apply()
 
 if __name__ == "__main__":
     asyncio.run(main())

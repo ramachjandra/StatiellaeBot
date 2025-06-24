@@ -73,7 +73,7 @@ RISPOSTE = {
 FAQ = {
     "❓ Incarico": "📄 L'incarico è necessario per vendere. Garantisce chiarezza e tutela entrambe le parti.",
     "❓ Provvigioni": "💰 Le provvigioni variano. Applichiamo un minimo pratica per immobili sotto i 50.000 €.",
-    "❓ Documenti": "📆 Servono: visura, planimetria, atto di proprietà, certificazioni. Ti aiutiamo noi!",
+    "❓ Documenti": "📦 Servono: visura, planimetria, atto di proprietà, certificazioni. Ti aiutiamo noi!",
     "❓ Affitti": "🔐 Richiediamo garanzie solide: buste paga, referenze, assicurazioni. Tutela massima per il proprietario.",
     "❓ Pubblicazione": "🌐 Pubblicazione su Immobiliare.it, Casa.it, Idealista, ecc. con foto/video professionali.",
     "❓ Tempi": "🗓️ Il tempo medio dipende dalla zona e dalla documentazione. Lavoriamo per vendere nel minor tempo possibile.",
@@ -90,7 +90,7 @@ menu_state = {}
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     menu_state[user_id] = "main"
-    await update.message.reply_text(WELCOME_MESSAGE, parse_mode="Markdown", reply_markup=main_menu)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=WELCOME_MESSAGE, parse_mode="Markdown", reply_markup=main_menu)
 
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -100,35 +100,36 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if text == "❓ FAQ":
         menu_state[user_id] = "faq"
-        await update.message.reply_text("❓ Domande frequenti:", reply_markup=faq_menu)
+        await context.bot.send_message(chat_id=chat.id, text="❓ Domande frequenti:", reply_markup=faq_menu)
 
     elif text == "🔙 Indietro":
         menu_state[user_id] = "main"
-        await update.message.reply_text("🔙 Torna al menu principale.", reply_markup=main_menu)
+        await context.bot.send_message(chat_id=chat.id, text="🔙 Torna al menu principale.", reply_markup=main_menu)
 
     elif text in FAQ:
-        await update.message.reply_text(FAQ[text], parse_mode="Markdown", reply_markup=faq_menu)
+        await context.bot.send_message(chat_id=chat.id, text=FAQ[text], parse_mode="Markdown", reply_markup=faq_menu)
 
     elif text in RISPOSTE:
-        await update.message.reply_text(RISPOSTE[text], parse_mode="Markdown", reply_markup=main_menu)
+        await context.bot.send_message(chat_id=chat.id, text=RISPOSTE[text], parse_mode="Markdown", reply_markup=main_menu)
 
     else:
-        domanda = update.message.text
-        await update.message.reply_text(
-            "❓ Non ho capito la richiesta. Verrai contattato via WhatsApp da *Giada* nel più breve tempo possibile.",
+        domanda = text
+        await context.bot.send_message(
+            chat_id=chat.id,
+            text="❓ Non ho capito la richiesta. Verrai contattato via WhatsApp da *Giada* nel più breve tempo possibile.",
             parse_mode="Markdown",
             reply_markup=main_menu
         )
 
+        # Inoltra la domanda nel gruppo/supergruppo
         if chat.type in ["group", "supergroup"]:
             await context.bot.send_message(
                 chat_id=chat.id,
-                text=f"📬 *Domanda non riconosciuta da {user.full_name}:*\n_{domanda}_",
+                text=f"📩 *Domanda non riconosciuta da {user.full_name}:*\n_{domanda}_",
                 parse_mode="Markdown"
             )
 
-if __name__ == '__main__':
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
-    app.run_polling(close_loop=False)
+app = ApplicationBuilder().token(TOKEN).build()
+app.add_handler(CommandHandler("start", start))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
+app.run_polling()

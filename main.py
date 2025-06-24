@@ -12,7 +12,7 @@ import asyncio
 
 # === CONFIG ===
 TOKEN = "7783620639:AAEanbapO1Ci2dnBvwxhfSiP2eBC0TQPKio"
-WEBHOOK_URL = "https://statiellaebot.onrender.com/webhook"  # ✅ metti il path /webhook alla fine
+WEBHOOK_URL = "https://statiellaebot.onrender.com/webhook"
 
 # === MESSAGGI ===
 WELCOME_MESSAGE = """
@@ -103,10 +103,8 @@ async def main():
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, new_member))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 
-    # Imposta il webhook su Telegram
     await app.bot.set_webhook(WEBHOOK_URL)
 
-    # Avvia il server interno
     await app.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),

@@ -10,10 +10,11 @@ from telegram.constants import ParseMode
 import os
 import asyncio
 
+# === CONFIG ===
 TOKEN = "7783620639:AAEanbapO1Ci2dnBvwxhfSiP2eBC0TQPKio"
-WEBHOOK_URL = "https://statiellaebot.onrender.com/webhook"  # ✅ path completo
+WEBHOOK_URL = "https://statiellaebot.onrender.com/webhook"  # ✅ metti il path /webhook alla fine
 
-# Messaggio di benvenuto
+# === MESSAGGI ===
 WELCOME_MESSAGE = """
 👋 Benvenuto nell’*assistente automatico di Statiellae Immobiliare!*
 
@@ -24,7 +25,6 @@ Per richieste urgenti puoi contattare direttamente *Giada* su WhatsApp al **320 
 👇 Usa il menu qui sotto per iniziare.
 """
 
-# Tastiera principale
 main_menu = ReplyKeyboardMarkup([
     ["📍 Vetrina", "📄 Documenti"],
     ["🛠 Servizi", "📞 Contatti"],
@@ -32,7 +32,6 @@ main_menu = ReplyKeyboardMarkup([
     ["🦘 Contatta Giada", "🔄 Riavvia"]
 ], resize_keyboard=True)
 
-# Risposte generali
 RISPOSTE = {
     "📍 Vetrina": "🔎 Consulta la vetrina aggiornata:\nhttps://www.immobiliarestatiellae.it/immobili",
     "📄 Documenti": (
@@ -65,13 +64,13 @@ RISPOSTE = {
 
 menu_state = {}
 
-# /start
+# === HANDLER: /start ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     menu_state[user_id] = "main"
     await update.message.reply_text(WELCOME_MESSAGE, parse_mode=ParseMode.MARKDOWN, reply_markup=main_menu)
 
-# Messaggi normali
+# === HANDLER: messaggi utente ===
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text
@@ -86,7 +85,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=main_menu
         )
 
-# Nuovi membri
+# === HANDLER: nuovi membri ===
 async def new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for member in update.message.new_chat_members:
         if not member.is_bot:
@@ -96,7 +95,7 @@ async def new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=main_menu
             )
 
-# Funzione principale per avvio webhook
+# === FUNZIONE PRINCIPALE ===
 async def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
@@ -104,14 +103,18 @@ async def main():
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, new_member))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 
+    # Imposta il webhook su Telegram
     await app.bot.set_webhook(WEBHOOK_URL)
 
+    # Avvia il server interno
     await app.run_webhook(
         listen="0.0.0.0",
         port=int(os.environ.get("PORT", 10000)),
         webhook_url="/webhook"
     )
 
-# Avvio evento asincrono
+# === AVVIO EVENT LOOP (compatibile con Render) ===
 if __name__ == "__main__":
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.create_task(main())
+    loop.run_forever()

@@ -1,30 +1,35 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
-import telegram.error
 
-# Inserisci qui il token valido
 TOKEN = "7783620639:AAEanbapO1Ci2dnBvwxhfSiP2eBC0TQPKio"
 
 # Messaggio di benvenuto
 WELCOME_MESSAGE = """
-👋 Benvenuto nell’*assistente automatico di Statiellae Immobiliare!*
+👋 Benvenuto nell’*assistente automatico di Statiellae Immobiliare*!
 
-Questo assistente è attivo 24/7 per fornirti informazioni utili.
+Questo assistente è stato pensato per aiutarti a trovare rapidamente le risposte alle domande più comuni e fornirti informazioni utili in autonomia, 24 ore su 24.
 
-Per richieste urgenti puoi contattare direttamente *Giada* su WhatsApp al **320 807 0022**.
+Nel frattempo, per domande più specifiche o urgenti puoi contattare direttamente *Giada* al numero **320 807 0022** (WhatsApp): ti risponderà nel più breve tempo possibile.
 
-👇 Usa il menu qui sotto per iniziare.
+📌 Con il menu qui sotto puoi:
+– Sfogliare la vetrina degli immobili disponibili  
+– Scaricare documenti e guide utili  
+– Scoprire i servizi offerti  
+– Trovare i nostri contatti e orari  
+– Leggere le risposte alle domande più frequenti
+
+🔻 Scegli una voce dal menu qui sotto per iniziare!
 """
 
 # Tastiera principale
 main_menu = ReplyKeyboardMarkup([
     ["📍 Vetrina", "📄 Documenti"],
-    ["🚲 Servizi", "📞 Contatti"],
+    ["🛠 Servizi", "📞 Contatti"],
     ["⏰ Orari", "❓ FAQ"],
-    ["🤚 Start", "🦘 Contatta Giada"]
+    ["🦘 Contatta Giada", "🔄 Riavvia"]
 ], resize_keyboard=True)
 
-# Dizionari di risposte
+# Risposte generali
 RISPOSTE = {
     "📍 Vetrina": "🔎 Consulta la vetrina aggiornata:\nhttps://www.immobiliarestatiellae.it/immobili",
     "📄 Documenti": (
@@ -32,7 +37,7 @@ RISPOSTE = {
         "- Contratto incarico: https://www.immobiliarestatiellae.it/contratto.pdf\n"
         "- Guida venditore: https://www.immobiliarestatiellae.it/guida.pdf"
     ),
-    "🚲 Servizi": (
+    "🛠 Servizi": (
         "📋 Offriamo:\n"
         "- Compravendita e affitti\n"
         "- Vetrina esclusiva con foto/video/drone\n"
@@ -52,49 +57,47 @@ RISPOSTE = {
         "🗓️ Domenica: *su appuntamento*"
     ),
     "🦘 Contatta Giada": "📱 WhatsApp o telefono: 320 807 0022",
-    "🤚 Start": WELCOME_MESSAGE
+    "🔄 Riavvia": WELCOME_MESSAGE
 }
 
-# Comando /start
+# Stato menu per utente
+menu_state = {}
+
+# /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=WELCOME_MESSAGE,
-        parse_mode="Markdown",
-        reply_markup=main_menu
-    )
+    user_id = update.effective_user.id
+    menu_state[user_id] = "main"
+    await update.message.reply_text(WELCOME_MESSAGE, parse_mode="Markdown", reply_markup=main_menu)
 
-# Gestione dei messaggi
+# Messaggi normali
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message or not update.message.text:
-        return
-
-    text = update.message.text.strip()
-    chat_id = update.effective_chat.id
+    user_id = update.effective_user.id
+    text = update.message.text
 
     if text in RISPOSTE:
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text=RISPOSTE[text],
-            parse_mode="Markdown",
-            reply_markup=main_menu
-        )
+        await update.message.reply_text(RISPOSTE[text], parse_mode="Markdown", reply_markup=main_menu)
     else:
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text="❓ Non ho capito la richiesta. Verrai contattato via WhatsApp da *Giada* nel più breve tempo possibile.",
+        await update.message.reply_text(
+            "🚫 Mi dispiace, non ho capito la richiesta. Questo assistente automatico è pensato per rispondere solo alle domande più comuni.\n"
+            "Per domande specifiche, verrai ricontattato privatamente via WhatsApp da *Giada*.",
             parse_mode="Markdown",
             reply_markup=main_menu
         )
 
-# Costruzione app e registrazione handler
+# Messaggio di benvenuto ai nuovi membri del gruppo
+async def new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    for member in update.message.new_chat_members:
+        if member.is_bot:
+            continue
+        await update.message.reply_text(
+            f"👋 Benvenuto {member.full_name} nel gruppo di Statiellae Immobiliare!\n\n"
+            "Questo è l’assistente automatico, attivo 24h su 24, per rispondere alle domande più comuni.",
+            reply_markup=main_menu
+        )
+
+# Avvio bot
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
+app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, new_member))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
-
-# Avvio polling con gestione errori
-if __name__ == "__main__":
-    try:
-        app.run_polling()
-    except telegram.error.Conflict:
-        print("❗ Un'altra istanza del bot è già attiva. Arresto automatico.")
+app.run_polling()

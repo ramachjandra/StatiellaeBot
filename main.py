@@ -140,3 +140,11 @@ app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 app.run_polling()
+# ... tutto il resto del codice sopra rimane invariato ...
+
+if __name__ == "__main__":
+    try:
+        app.run_polling()
+    except telegram.error.Conflict:
+        print("❗ Un'altra istanza del bot è già attiva. Arresto automatico.")
+

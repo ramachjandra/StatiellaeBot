@@ -95,6 +95,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text
+    # DEBUG: stampa chat ID
+    print(f"📩 Messaggio ricevuto da chat ID: {update.effective_chat.id}, tipo: {update.effective_chat.type}, testo: {text}")
 
     if text == "❓ FAQ":
         menu_state[user_id] = "faq"

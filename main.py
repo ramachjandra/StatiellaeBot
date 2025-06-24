@@ -73,7 +73,7 @@ RISPOSTE = {
 FAQ = {
     "❓ Incarico": "📄 L'incarico è necessario per vendere. Garantisce chiarezza e tutela entrambe le parti.",
     "❓ Provvigioni": "💰 Le provvigioni variano. Applichiamo un minimo pratica per immobili sotto i 50.000 €.",
-    "❓ Documenti": "📦 Servono: visura, planimetria, atto di proprietà, certificazioni. Ti aiutiamo noi!",
+    "❓ Documenti": "📆 Servono: visura, planimetria, atto di proprietà, certificazioni. Ti aiutiamo noi!",
     "❓ Affitti": "🔐 Richiediamo garanzie solide: buste paga, referenze, assicurazioni. Tutela massima per il proprietario.",
     "❓ Pubblicazione": "🌐 Pubblicazione su Immobiliare.it, Casa.it, Idealista, ecc. con foto/video professionali.",
     "❓ Tempi": "🗓️ Il tempo medio dipende dalla zona e dalla documentazione. Lavoriamo per vendere nel minor tempo possibile.",
@@ -120,15 +120,15 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=main_menu
         )
 
-        # Inoltra nel gruppo stesso se disponibile
         if chat.type in ["group", "supergroup"]:
             await context.bot.send_message(
                 chat_id=chat.id,
-                text=f"📩 *Domanda non riconosciuta da {user.full_name}:*\n_{domanda}_",
+                text=f"📬 *Domanda non riconosciuta da {user.full_name}:*\n_{domanda}_",
                 parse_mode="Markdown"
             )
 
-app = ApplicationBuilder().token(TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
-app.run_polling()
+if __name__ == '__main__':
+    app = ApplicationBuilder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
+    app.run_polling(close_loop=False)

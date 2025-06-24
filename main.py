@@ -1,7 +1,7 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
-TOKEN = "7783620639:AAEanbapO1Ci2dnBvwxhfSiP2eBC0TQPKio"
+TOKEN = "INSERISCI_IL_TUO_TOKEN"
 
 # Messaggio di benvenuto
 WELCOME_MESSAGE = """
@@ -95,8 +95,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text
-    # DEBUG: stampa chat ID
-    print(f"📩 Messaggio ricevuto da chat ID: {update.effective_chat.id}, tipo: {update.effective_chat.type}, testo: {text}")
+    user = update.effective_user
+    chat = update.effective_chat
 
     if text == "❓ FAQ":
         menu_state[user_id] = "faq"
@@ -113,42 +113,22 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(RISPOSTE[text], parse_mode="Markdown", reply_markup=main_menu)
 
     else:
-        else:
-    user = update.effective_user
-    chat = update.effective_chat
-    domanda = update.message.text
-
-    # Risposta all'utente
-    await update.message.reply_text(
-        "❓ Non ho capito la richiesta. Verrai contattato via WhatsApp da *Giada* nel più breve tempo possibile.",
-        parse_mode="Markdown",
-        reply_markup=main_menu
-    )
-
-    # Rimanda la domanda nel gruppo
-    try:
-        await context.bot.send_message(
-            chat_id=chat.id,
-            text=f"📩 *Domanda non riconosciuta da {user.full_name}:*\n_{domanda}_",
-            parse_mode="Markdown"
+        domanda = update.message.text
+        await update.message.reply_text(
+            "❓ Non ho capito la richiesta. Verrai contattato via WhatsApp da *Giada* nel più breve tempo possibile.",
+            parse_mode="Markdown",
+            reply_markup=main_menu
         )
-    except Exception as e:
-        print(f"Errore nell'invio della domanda nel gruppo: {e}")
 
+        # Inoltra nel gruppo stesso se disponibile
+        if chat.type in ["group", "supergroup"]:
+            await context.bot.send_message(
+                chat_id=chat.id,
+                text=f"📩 *Domanda non riconosciuta da {user.full_name}:*\n_{domanda}_",
+                parse_mode="Markdown"
+            )
 
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 app.run_polling()
-from telegram.error import ChatMigrated
-import logging
-
-# Configura il logger
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
-
-async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logging.error("⚠️ Errore ricevuto:", exc_info=context.error)
-    
-    if isinstance(context.error, ChatMigrated):
-        new_chat_id = context.error.new_chat_id
-        logging.info(f"🆕 Chat migrata, nuovo chat_id: {new_chat_id}")

@@ -1,11 +1,11 @@
 from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
-TOKEN = "7783620639:AAEanbapO1Ci2dnBvwxhfSiP2eBC0TQPKio"
+TOKEN = "INSERISCI_IL_TUO_TOKEN"
 
 # Messaggio di benvenuto
 WELCOME_MESSAGE = """
-👋 Benvenuto nell’*assistente automatico di Statiellae Immobiliare!*
+👋 Benvenuto nell’*assistente automatico di Statiellae Immobiliare*!
 
 Questo assistente è stato pensato per aiutarti a trovare rapidamente le risposte alle domande più comuni e fornirti informazioni utili in autonomia, 24 ore su 24.
 
@@ -18,24 +18,15 @@ Nel frattempo, per domande più specifiche o urgenti puoi contattare direttament
 – Trovare i nostri contatti e orari  
 – Leggere le risposte alle domande più frequenti
 
-👇 Scegli una voce dal menu qui sotto per iniziare!
+🔻 Scegli una voce dal menu qui sotto per iniziare!
 """
 
 # Tastiera principale
 main_menu = ReplyKeyboardMarkup([
     ["📍 Vetrina", "📄 Documenti"],
-    ["🚲 Servizi", "📞 Contatti"],
+    ["🛠 Servizi", "📞 Contatti"],
     ["⏰ Orari", "❓ FAQ"],
-    ["🤚 Start", "🦘 Contatta Giada"]
-], resize_keyboard=True)
-
-# Sottomenu FAQ
-faq_menu = ReplyKeyboardMarkup([
-    ["❓ Incarico", "❓ Provvigioni"],
-    ["❓ Documenti", "❓ Affitti"],
-    ["❓ Pubblicazione", "❓ Tempi"],
-    ["❓ Dettagli immobile"],
-    ["🔙 Indietro"]
+    ["🦘 Contatta Giada", "🔄 Riavvia"]
 ], resize_keyboard=True)
 
 # Risposte generali
@@ -46,7 +37,7 @@ RISPOSTE = {
         "- Contratto incarico: https://www.immobiliarestatiellae.it/contratto.pdf\n"
         "- Guida venditore: https://www.immobiliarestatiellae.it/guida.pdf"
     ),
-    "🚲 Servizi": (
+    "🛠 Servizi": (
         "📋 Offriamo:\n"
         "- Compravendita e affitti\n"
         "- Vetrina esclusiva con foto/video/drone\n"
@@ -66,85 +57,47 @@ RISPOSTE = {
         "🗓️ Domenica: *su appuntamento*"
     ),
     "🦘 Contatta Giada": "📱 WhatsApp o telefono: 320 807 0022",
-    "🤚 Start": WELCOME_MESSAGE
+    "🔄 Riavvia": WELCOME_MESSAGE
 }
 
-# Risposte FAQ
-FAQ = {
-    "❓ Incarico": "📄 L'incarico è necessario per vendere. Garantisce chiarezza e tutela entrambe le parti.",
-    "❓ Provvigioni": "💰 Le provvigioni variano. Applichiamo un minimo pratica per immobili sotto i 50.000 €.",
-    "❓ Documenti": "📦 Servono: visura, planimetria, atto di proprietà, certificazioni. Ti aiutiamo noi!",
-    "❓ Affitti": "🔐 Richiediamo garanzie solide: buste paga, referenze, assicurazioni. Tutela massima per il proprietario.",
-    "❓ Pubblicazione": "🌐 Pubblicazione su Immobiliare.it, Casa.it, Idealista, ecc. con foto/video professionali.",
-    "❓ Tempi": "🗓️ Il tempo medio dipende dalla zona e dalla documentazione. Lavoriamo per vendere nel minor tempo possibile.",
-    "❓ Dettagli immobile": (
-        "📋 Per ogni immobile presente nella vetrina trovi indicato un *numero di riferimento* sulla foto principale (es. 'Rif. 001').\n\n"
-        "⬇️ Dopo aver scelto l’immobile che ti interessa, usa il *menu a tendina* che trovi poco sopra la vetrina per aprire la relativa *scheda dettagliata*.\n\n"
-        "📸 In ogni scheda troverai: foto in alta risoluzione, video, planimetrie, descrizioni approfondite e documenti utili per valutarlo al meglio.\n"
-        "✅ La scheda dettagliata degli immobili presente su immobiliarestatiellae.it è la più ricca e completa che potrai trovare sugli altri annunci dei vari portali e social ✅"
-    )
-}
-
-# Stato menu per ciascun utente
+# Stato menu per utente
 menu_state = {}
 
-# Comando /start
+# /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     menu_state[user_id] = "main"
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=WELCOME_MESSAGE, parse_mode="Markdown", reply_markup=main_menu)
+    await update.message.reply_text(WELCOME_MESSAGE, parse_mode="Markdown", reply_markup=main_menu)
 
-# Gestione messaggi
+# Messaggi normali
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message or not update.message.text:
-        return
-
     user_id = update.effective_user.id
-    text = update.message.text.strip()
-    user = update.effective_user
-    chat = update.effective_chat
+    text = update.message.text
 
-    if text == "❓ FAQ":
-        menu_state[user_id] = "faq"
-        await context.bot.send_message(chat_id=chat.id, text="❓ Domande frequenti:", reply_markup=faq_menu)
-
-    elif text == "🔙 Indietro":
-        menu_state[user_id] = "main"
-        await context.bot.send_message(chat_id=chat.id, text="🔙 Torna al menu principale.", reply_markup=main_menu)
-
-    elif menu_state.get(user_id) == "faq" and text in FAQ:
-        await context.bot.send_message(chat_id=chat.id, text=FAQ[text], parse_mode="Markdown", reply_markup=faq_menu)
-
-    elif menu_state.get(user_id) == "main" and text in RISPOSTE:
-        await context.bot.send_message(chat_id=chat.id, text=RISPOSTE[text], parse_mode="Markdown", reply_markup=main_menu)
-
+    if text in RISPOSTE:
+        await update.message.reply_text(RISPOSTE[text], parse_mode="Markdown", reply_markup=main_menu)
     else:
-        await context.bot.send_message(
-            chat_id=chat.id,
-            text="❓ Non ho capito la richiesta. Verrai contattato via WhatsApp da *Giada* nel più breve tempo possibile.",
+        await update.message.reply_text(
+            "🚫 Mi dispiace, non ho capito la richiesta. Questo assistente automatico è pensato per rispondere solo alle domande più comuni.\n"
+            "Per domande specifiche, verrai ricontattato privatamente via WhatsApp da *Giada*.",
             parse_mode="Markdown",
             reply_markup=main_menu
         )
 
-        # Riscrittura della domanda nello stesso gruppo o supergruppo
-        if chat.type in ["group", "supergroup"]:
-            nome = user.full_name or user.username or "Utente"
-            await context.bot.send_message(
-                chat_id=chat.id,
-                text=f"📩 *Domanda non riconosciuta da {nome}:*\n_{text}_",
-                parse_mode="Markdown"
-            )
+# Messaggio di benvenuto ai nuovi membri del gruppo
+async def new_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    for member in update.message.new_chat_members:
+        if member.is_bot:
+            continue
+        await update.message.reply_text(
+            f"👋 Benvenuto {member.full_name} nel gruppo di Statiellae Immobiliare!\n\n"
+            "Questo è l’assistente automatico, attivo 24h su 24, per rispondere alle domande più comuni.",
+            reply_markup=main_menu
+        )
 
-# Avvio dell'app
+# Avvio bot
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
+app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, new_member))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 app.run_polling()
-# ... tutto il resto del codice sopra rimane invariato ...
-
-if __name__ == "__main__":
-    try:
-        app.run_polling()
-    except telegram.error.Conflict:
-        print("❗ Un'altra istanza del bot è già attiva. Arresto automatico.")
-

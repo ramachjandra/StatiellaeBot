@@ -123,3 +123,15 @@ app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 app.run_polling()
+from telegram.error import ChatMigrated
+import logging
+
+# Configura il logger
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logging.error("⚠️ Errore ricevuto:", exc_info=context.error)
+    
+    if isinstance(context.error, ChatMigrated):
+        new_chat_id = context.error.new_chat_id
+        logging.info(f"🆕 Chat migrata, nuovo chat_id: {new_chat_id}")

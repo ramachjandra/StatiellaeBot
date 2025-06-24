@@ -2,8 +2,6 @@ from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
 TOKEN = "7783620639:AAEanbapO1Ci2dnBvwxhfSiP2eBC0TQPKio"
-"
-
 # Messaggio di benvenuto
 WELCOME_MESSAGE = """
 👋 Benvenuto nell’*assistente automatico di Statiellae Immobiliare*!

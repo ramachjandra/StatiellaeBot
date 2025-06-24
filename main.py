@@ -104,10 +104,12 @@ async def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 
     await app.bot.set_webhook(WEBHOOK_URL)
-    await app.run_webhook(
-        listen="0.0.0.0",
-        port=int(os.environ.get("PORT", 10000)),
-        webhook_url="/webhook"
+await app.run_webhook(
+    listen="0.0.0.0",
+    port=int(https://statiellaebot.onrender.com("PORT", 10000)),
+    webhook_url="/webhook"
+)
+
     )
 
 if __name__ == "__main__":
